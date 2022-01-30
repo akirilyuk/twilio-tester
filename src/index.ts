@@ -1,23 +1,20 @@
-import twilio from "twilio";
+import twilio, { Twilio } from "twilio";
 import * as ngrok from "ngrok";
 import express from "express";
 import * as http from "http";
 import * as dotenv from "dotenv";
 
 import * as stringSimilarity from "string-similarity";
-dotenv.config();
 const port = 8000;
 
 const VoiceResponse = twilio.twiml.VoiceResponse;
 
-let url: string;
-
-interface TesterOptions {
+export interface TesterOptions {
 	twilioAccountId: string;
 	twilioAuthToken: string;
 	ngrokAuthToken: string;
 }
-class VoiceBotTester {
+export class VoiceBotTester {
 	twilioClient: {};
 	ngrokAuth: string;
 	constructor(options: TesterOptions) {
@@ -33,9 +30,9 @@ class VoiceBotTester {
 	}
 }
 
-class VoiceBotTest {
+export class VoiceBotTest {
 	server: any;
-	twilioClient: {};
+	twilioClient: twilio.Twilio;
 	consumerUtterance: string[];
 	expectedBotResponses: string[];
 	receivedBotResponses: string[];
@@ -44,6 +41,7 @@ class VoiceBotTest {
 	url: string;
 	finishPromise: any;
 	finishCallback: any;
+	call: any;
 	constructor(ngrokAuth: string, twilioClient: any) {
 		this.ngrokAuth = ngrokAuth;
 		this.twilioClient = twilioClient;
@@ -77,20 +75,38 @@ class VoiceBotTest {
 		);
 
 		app.post("/gather-result", (req, res, next) => {
+			console.log("POST /gather-result");
 			const speechResult = req.body.SpeechResult;
 			this.receivedBotResponses.push(speechResult);
-			console.log("POST gather-result");
 
-			console.log("expected: ", this.expectedBotResponses[this.numberOfTurns]);
-			console.log("received: ", speechResult);
-
-			console.log(
-				"similarity:",
-				stringSimilarity.compareTwoStrings(
-					this.expectedBotResponses[this.numberOfTurns].toLowerCase(),
-					speechResult.toLowerCase()
-				)
+			const similarity = stringSimilarity.compareTwoStrings(
+				this.expectedBotResponses[this.numberOfTurns].toLowerCase(),
+				speechResult.toLowerCase()
 			);
+
+			console.log("similarity:", similarity);
+
+			try {
+				expect(similarity).toBeGreaterThan(0.7);
+			} catch (err) {
+				console.error("Received wrong bot response!", err.message);
+				console.log(
+					"expected: ",
+					this.expectedBotResponses[this.numberOfTurns]
+				);
+				console.log("received: ", speechResult);
+
+				try {
+					// to be able to better understand the erro we wil
+					// compare the sentectens and this will trhow a better info
+					expect(speechResult).toEqual(
+						this.expectedBotResponses[this.numberOfTurns]
+					);
+				} catch (humanError) {
+					// we need to finish the CB otherwise we are blocked
+					this.finishCallback(humanError);
+				}
+			}
 
 			this.numberOfTurns += 1;
 			const twiml = new VoiceResponse();
@@ -105,22 +121,25 @@ class VoiceBotTest {
 			}
 			res.type("text/xml");
 			res.send(twiml.toString());
+			console.log("POST /gather-result finished", twiml.toString());
 		});
 
 		app.post("/call-start", (req, res) => {
-			console.log("POST call-start");
+			console.log("POST /call-start");
 			const twiml = new VoiceResponse();
 			twiml.say(this.consumerUtterance[this.numberOfTurns]);
 			console.log("consumer says", this.consumerUtterance[this.numberOfTurns]);
 			twiml.pause({ length: 1 });
 			twiml.gather({
 				action: this.url + "/gather-result",
+				//@ts-ignore
 				input: "speech",
-				timeout: 10,
+				timeout: 7,
 				speechTimeout: "2"
 			});
 			res.type("text/xml");
 			res.send(twiml.toString());
+			console.log("POST /call-start finished", twiml.toString());
 		});
 
 		const server = http.createServer(app);
@@ -145,73 +164,48 @@ class VoiceBotTest {
 			authtoken: this.ngrokAuth,
 			addr: port
 		});
-		console.log("ngrok url", url);
+		console.log("ngrok url", this.url);
 
 		this.server = await this.createServer();
-		this.finishPromise = new Promise(resolve => {
-			this.finishCallback = resolve;
+		this.finishPromise = new Promise((resolve, reject) => {
+			this.finishCallback = (err: any) => {
+				if (err) {
+					reject(err);
+				} else {
+					resolve({});
+				}
+			};
 		});
 
-		const call = await this.twilioClient.calls.create({
+		this.call = await this.twilioClient.calls.create({
 			to: terminationNumber,
 			from: sourceNumber,
 			method: "POST",
 			url: this.url + "/call-start"
 		});
 
-		console.log("created call", call.sid);
+		console.log("created call", this.call.sid);
 
 		await this.finishPromise;
+	}
 
+	async cleanup() {
+		if (this.call) {
+			try {
+				await this.twilioClient
+					.calls(this.call.sid)
+					.update({ twiml: "<Response><Hangup/></Response>" });
+			} catch (err) {
+				console.log("could not hagup twilio call", err.message);
+			}
+		}
 		console.log("call has finished, shutting down server");
 
 		await new Promise(resolve => this.server.close(resolve));
 
 		await ngrok.disconnect(this.url);
+		await ngrok.kill();
 
 		console.log("cleanup completed!");
 	}
 }
-
-const main = async () => {
-	const accountSid = String(process.env.TWILLIO_ACCOUNT_ID);
-	const authToken = String(process.env.TWILLIO_AUTH_TOKEN);
-	const ngrokAuth = String(process.env.NGROK_AUTH_TOKEN);
-
-	const sourceNumber: string = String(process.env.SOURCE_NUMBER);
-	const terminationNumber: string = String(process.env.TERMINATION_NUMBER);
-
-	const voiceBotTester = new VoiceBotTester({
-		ngrokAuthToken: ngrokAuth,
-		twilioAccountId: accountSid,
-		twilioAuthToken: authToken
-	});
-
-	const voiceBotTest = voiceBotTester.createVoiceBotTest();
-
-	voiceBotTest.addConsumerUtterance("Hi!");
-
-	voiceBotTest.addExpectedBotResponse(
-		"Hi and welcome to Louis restaurant. What do you want to order pizza or spaghetti?"
-	);
-
-	voiceBotTest.addConsumerUtterance("I would like to order a Pizza!");
-
-	voiceBotTest.addExpectedBotResponse(
-		"What toppings do you like on your  pizza?"
-	);
-
-	voiceBotTest.addConsumerUtterance("Cheese, pineapple and ham!");
-
-	voiceBotTest.addExpectedBotResponse("What size should be your pizza?");
-
-	voiceBotTest.addConsumerUtterance("Big");
-
-	voiceBotTest.addExpectedBotResponse(
-		"Your have ordered a big pizza with cheese, pineapple and Ham."
-	);
-
-	await voiceBotTest.executeTest(terminationNumber, sourceNumber);
-};
-
-main();
