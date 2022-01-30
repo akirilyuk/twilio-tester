@@ -9,18 +9,6 @@
     "tsc": "tsc",
     "security": "yarn audit"
   },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
-  },
-  "lint-staged": {
-    "*.{ts,js,tsx,jsx}": [
-      "eslint --fix",
-      "jest --coverage --findRelatedTests",
-      "git add"
-    ]
-  },
   "keywords": [],
   "author": "github.com/martingaston",
   "license": "MIT",
