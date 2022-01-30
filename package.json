@@ -1,12 +1,13 @@
 {
-  "name": "typescript-jest",
+  "name": "twilio-tester",
   "version": "0.0.1",
-  "description": "A barebones starter for spinning up a TypeScript/Jest environment",
+  "description": "Test chat bot integrations via twilio",
   "main": "index.js",
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
-    "tsc": "tsc"
+    "tsc": "tsc",
+    "security": "yarn audit"
   },
   "husky": {
     "hooks": {
@@ -14,23 +15,40 @@
     }
   },
   "lint-staged": {
-    "*.{ts,js,tsx,jsx}": ["eslint --fix", "jest --coverage --findRelatedTests", "git add"]
+    "*.{ts,js,tsx,jsx}": [
+      "eslint --fix",
+      "jest --coverage --findRelatedTests",
+      "git add"
+    ]
   },
   "keywords": [],
   "author": "github.com/martingaston",
   "license": "MIT",
+  "dependencies": {
+    "@types/compression": "^1.7.2",
+    "@types/express": "^4.17.13",
+    "compression": "^1.7.4",
+    "dotenv": "^14.3.2",
+    "express": "^4.17.2",
+    "helmet": "^5.0.2",
+    "ngrok": "^4.3.0",
+    "string-similarity": "^4.0.4",
+    "twilio": "3.73.1"
+  },
   "devDependencies": {
     "@types/jest": "^24.0.15",
     "@typescript-eslint/eslint-plugin": "^1.11.0",
     "@typescript-eslint/parser": "^1.11.0",
     "eslint": "^6.0.1",
     "eslint-config-prettier": "^6.0.0",
+    "eslint-plugin-jest": "26.0.0",
     "eslint-plugin-prettier": "^3.1.0",
     "husky": "^3.0.0",
-    "jest": "^24.8.0",
+    "jest": "27.4.7",
     "lint-staged": "^9.1.0",
     "prettier": "^1.18.2",
-    "ts-jest": "^24.0.2",
+    "ts-jest": "27.1.3",
+    "ts-node": "8.8.1",
     "typescript": "^3.5.2"
   }
 }
