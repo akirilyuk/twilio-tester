@@ -83,13 +83,17 @@ export class VoiceBotTest {
 				this.expectedBotResponses[this.numberOfTurns].toLowerCase(),
 				speechResult.toLowerCase()
 			);
-
-			console.log("similarity:", similarity);
+			console.log(this.numberOfTurns, "bot response:", speechResult);
+			console.log(this.numberOfTurns, "similarity:", similarity);
 
 			try {
 				expect(similarity).toBeGreaterThan(0.7);
 			} catch (err) {
-				console.error("Received wrong bot response!", err.message);
+				console.error(
+					this.numberOfTurns,
+					"Received wrong bot response!",
+					err.message
+				);
 				console.log(
 					"expected: ",
 					this.expectedBotResponses[this.numberOfTurns]
@@ -105,20 +109,26 @@ export class VoiceBotTest {
 				} catch (humanError) {
 					// we need to finish the CB otherwise we are blocked
 					this.finishCallback(humanError);
+
+					//stop execution here
+					return;
 				}
 			}
-
 			this.numberOfTurns += 1;
 			const twiml = new VoiceResponse();
 			if (!this.consumerUtterance[this.numberOfTurns]) {
 				// if we do not have any consumer input more to test, leave the call
 				twiml.hangup();
 				this.finishCallback();
-				console.log("hangup");
+				console.log(
+					this.numberOfTurns - 1,
+					"hangup call, no more consumer input"
+				);
 			} else {
-				console.log("continue");
+				console.log(this.numberOfTurns - 1, "continue call");
 				twiml.redirect(this.url + "/call-start");
 			}
+
 			res.type("text/xml");
 			res.send(twiml.toString());
 			console.log("POST /gather-result finished", twiml.toString());
@@ -128,7 +138,11 @@ export class VoiceBotTest {
 			console.log("POST /call-start");
 			const twiml = new VoiceResponse();
 			twiml.say(this.consumerUtterance[this.numberOfTurns]);
-			console.log("consumer says", this.consumerUtterance[this.numberOfTurns]);
+			console.log(
+				this.numberOfTurns,
+				"consumer says:",
+				this.consumerUtterance[this.numberOfTurns]
+			);
 			twiml.pause({ length: 1 });
 			twiml.gather({
 				action: this.url + "/gather-result",
@@ -155,7 +169,7 @@ export class VoiceBotTest {
 	addConsumerUtterance(consumerSpeech: string) {
 		this.consumerUtterance.push(consumerSpeech);
 	}
-	addExpectedBotResponse(botResponse: string) {
+	addExpectedResponse(botResponse: string): void {
 		this.expectedBotResponses.push(botResponse);
 	}
 

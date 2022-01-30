@@ -10,7 +10,7 @@ const ngrokAuth = String(process.env.NGROK_AUTH_TOKEN);
 const sourceNumber: string = String(process.env.SOURCE_NUMBER);
 const terminationNumber: string = String(process.env.TERMINATION_NUMBER);
 
-describe("test VG", () => {
+describe("test pizza bot", () => {
 	let voiceBotTester: VoiceBotTester;
 	let voiceBotTest: VoiceBotTest;
 	beforeAll(async () => {
@@ -26,50 +26,54 @@ describe("test VG", () => {
 			await voiceBotTest.cleanup();
 		}
 	}, 200000);
-	xit("should correctly be able to order a pizza", async () => {
+	it("should correctly be able to order a pizza", async () => {
 		voiceBotTest = voiceBotTester.createVoiceBotTest();
 
 		voiceBotTest.addConsumerUtterance("Hi!");
-		voiceBotTest.addExpectedBotResponse(
+		voiceBotTest.addExpectedResponse(
 			"Hi and welcome to Louis restaurant. What do you want to order pizza or spaghetti?"
 		);
 
 		voiceBotTest.addConsumerUtterance("I would like to order a Pizza!");
-		voiceBotTest.addExpectedBotResponse(
+		voiceBotTest.addExpectedResponse(
 			"What toppings do you like on your  pizza?"
 		);
 
 		voiceBotTest.addConsumerUtterance("Cheese, pineapple and ham!");
-		voiceBotTest.addExpectedBotResponse("What size should be your pizza?");
+		voiceBotTest.addExpectedResponse("What size should be your pizza?");
 
 		voiceBotTest.addConsumerUtterance("Big");
-		voiceBotTest.addExpectedBotResponse(
+		voiceBotTest.addExpectedResponse(
 			"Your have ordered a big pizza with cheese, pineapple and Ham."
 		);
 
 		await voiceBotTest.executeTest(terminationNumber, sourceNumber);
-	}, 60000);
-	it("should fail if we expect to order a spaghetti", async () => {
+	}, 120000);
+	it("should fail if we order spaghetti", async () => {
 		voiceBotTest = voiceBotTester.createVoiceBotTest();
 
 		voiceBotTest.addConsumerUtterance("Hi!");
-		voiceBotTest.addExpectedBotResponse(
+		voiceBotTest.addExpectedResponse(
 			"Hi and welcome to Louis restaurant. What do you want to order pizza or spaghetti?"
 		);
 
 		voiceBotTest.addConsumerUtterance("I would like to order spaghetti");
-		voiceBotTest.addExpectedBotResponse(
+		voiceBotTest.addExpectedResponse(
 			"What toppings do you like on your  pizza?"
 		);
 
 		voiceBotTest.addConsumerUtterance("Cheese, pineapple and ham!");
-		voiceBotTest.addExpectedBotResponse("What size should be your pizza?");
+		voiceBotTest.addExpectedResponse("What size should be your pizza?");
 
 		voiceBotTest.addConsumerUtterance("Big");
-		voiceBotTest.addExpectedBotResponse(
+		voiceBotTest.addExpectedResponse(
 			"Your have ordered a big pizza with cheese, pineapple and Ham."
 		);
-
-		await voiceBotTest.executeTest(terminationNumber, sourceNumber);
-	}, 60000);
+		try {
+			await voiceBotTest.executeTest(terminationNumber, sourceNumber);
+			throw new Error("should-fail");
+		} catch (err) {
+			expect(err.message).not.toEqual("should-fail");
+		}
+	}, 120000);
 });
