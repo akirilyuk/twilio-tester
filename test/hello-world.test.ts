@@ -27,7 +27,7 @@ describe("test hello world app", () => {
 			await voiceBotTest.cleanup();
 		}
 	}, 200000);
-	it.only("Should echo Hello World", async () => {
+	it("should get jambonuz hello world response", async () => {
 		voiceBotTest.addConsumerUtterance("Hi!");
 		voiceBotTest.addExpectedResponse(
 			"Jon Bones is the C PAP designs with the needs of Communication service providers in mind. This is an example of Simple Text to Speech, but there is so much more you can do try."
