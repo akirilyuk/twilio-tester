@@ -10,7 +10,7 @@ const ngrokAuth = String(process.env.NGROK_AUTH_TOKEN);
 const sourceNumber: string = String(process.env.SOURCE_NUMBER);
 const terminationNumber: string = String(process.env.TERMINATION_NUMBER);
 
-describe("test pizza bot", () => {
+xdescribe("test pizza bot", () => {
 	let voiceBotTester: VoiceBotTester;
 	let voiceBotTest: VoiceBotTest;
 	beforeAll(async () => {
@@ -20,6 +20,7 @@ describe("test pizza bot", () => {
 			twilioAccountId: accountSid,
 			twilioAuthToken: authToken
 		});
+		voiceBotTest = voiceBotTester.createVoiceBotTest();
 	});
 	afterEach(async () => {
 		if (voiceBotTest) {
@@ -27,8 +28,6 @@ describe("test pizza bot", () => {
 		}
 	}, 200000);
 	it("should correctly be able to order a pizza", async () => {
-		voiceBotTest = voiceBotTester.createVoiceBotTest();
-
 		voiceBotTest.addConsumerUtterance("Hi!");
 		voiceBotTest.addExpectedResponse(
 			"Hi and welcome to Louis restaurant. What do you want to order pizza or spaghetti?"
@@ -50,8 +49,6 @@ describe("test pizza bot", () => {
 		await voiceBotTest.executeTest(terminationNumber, sourceNumber);
 	}, 120000);
 	it("should fail if we order spaghetti", async () => {
-		voiceBotTest = voiceBotTester.createVoiceBotTest();
-
 		voiceBotTest.addConsumerUtterance("Hi!");
 		voiceBotTest.addExpectedResponse(
 			"Hi and welcome to Louis restaurant. What do you want to order pizza or spaghetti?"

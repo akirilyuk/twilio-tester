@@ -5,7 +5,7 @@ import * as http from "http";
 import * as dotenv from "dotenv";
 
 import * as stringSimilarity from "string-similarity";
-const port = 8000;
+const port = 8001;
 
 const VoiceResponse = twilio.twiml.VoiceResponse;
 
@@ -143,12 +143,12 @@ export class VoiceBotTest {
 				"consumer says:",
 				this.consumerUtterance[this.numberOfTurns]
 			);
-			twiml.pause({ length: 1 });
+			//twiml.pause({ length: 1 });
 			twiml.gather({
 				action: this.url + "/gather-result",
 				//@ts-ignore
 				input: "speech",
-				timeout: 7,
+				timeout: 10,
 				speechTimeout: "2"
 			});
 			res.type("text/xml");
@@ -160,7 +160,7 @@ export class VoiceBotTest {
 
 		return new Promise(resolve => {
 			server.listen(port, () => {
-				console.log("info", null, "API is listening.");
+				console.log("API is listening at port: ", port);
 				resolve(server);
 			});
 		});

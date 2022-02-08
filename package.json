@@ -4,7 +4,9 @@
   "description": "Test chat bot integrations via twilio",
   "main": "index.js",
   "scripts": {
-    "test": "jest",
+    "build": "tsc -p tsconfig.json",
+    "test": "jest -i",
+    "test:hello-world": "jest -i ./test/hello-world.test.ts",
     "test:watch": "jest --watch",
     "tsc": "tsc",
     "security": "yarn audit"
@@ -21,6 +23,7 @@
     "express": "^4.17.2",
     "helmet": "^5.0.2",
     "ngrok": "^4.3.0",
+    "pino": "^7.6.5",
     "string-similarity": "^4.0.4",
     "twilio": "3.73.1"
   },
